@@ -126,7 +126,7 @@ app.get('/api/artisans/nearby', async (req, res) => {
 
 app.post('/api/artisans', adminRateLimiter, authenticateAdmin, async (req, res) => {
   try {
-    const { business_name, owner_name, phone, latitude, longitude, address, services, category, mobility_type, sound_signal, hotspots, rating } = req.body;
+    const { business_name, owner_name, phone, latitude, longitude, address, services, category, mobility_type, sound_signal, hotspots, rating, start_time, end_time } = req.body;
 
     const parsedLat = parseFloat(latitude);
     const parsedLng = parseFloat(longitude);
@@ -139,21 +139,30 @@ app.post('/api/artisans', adminRateLimiter, authenticateAdmin, async (req, res) 
       business_name,
       owner_name,
       phone,
-      latitude: parsedLat,
-      longitude: parsedLng,
+      location: `POINT(${parsedLng} ${parsedLat})`,
       address,
-      services: services || [],
       category: category || 'vulcanizer',
       mobility_type: mobility_type || 'STATIC',
       sound_signal: sound_signal || null,
       is_open: true,
       verified: false,
-      rating: rating !== undefined ? parseFloat(rating) : 0.0
+      rating: rating !== undefined ? parseFloat(rating) : 0.0,
+      start_time: start_time || null,
+      end_time: end_time || null
     }]).select().single();
 
     if (artisanError) {
       console.error('Supabase Insert Error:', artisanError);
       return res.status(500).json({ error: 'Failed to insert into database.', details: artisanError });
+    }
+
+    if (services && Array.isArray(services) && services.length > 0) {
+      for (const s of services) {
+        const { data: srvData } = await supabase.from('services').upsert([{ name: s }], { onConflict: 'name' }).select().single();
+        if (srvData) {
+          await supabase.from('artisan_services').insert([{ artisan_id: artisanData.id, service_id: srvData.id }]);
+        }
+      }
     }
 
     if (mobility_type === 'MOBILE' && hotspots && Array.isArray(hotspots) && hotspots.length > 0) {
@@ -194,7 +203,7 @@ app.post('/api/artisans', adminRateLimiter, authenticateAdmin, async (req, res) 
 // Admin Dashboard Routes
 app.get('/api/artisans/all', authenticateAdmin, async (req, res) => {
   try {
-    const { data, error } = await supabase.from('artisans').select('*');
+    const { data, error } = await supabase.rpc('get_all_artisans_admin');
     if (error) throw error;
     res.json(data);
   } catch (error) {
@@ -206,14 +215,25 @@ app.get('/api/artisans/all', authenticateAdmin, async (req, res) => {
 app.put('/api/artisans/:id', authenticateAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { business_name, owner_name, phone, address, services, category, mobility_type, sound_signal, rating, is_open } = req.body;
+    const { business_name, owner_name, phone, address, services, category, mobility_type, sound_signal, rating, is_open, start_time, end_time } = req.body;
     
     const { data, error } = await supabase.from('artisans')
-      .update({ business_name, owner_name, phone, address, services, category, mobility_type, sound_signal, rating: rating !== undefined ? parseFloat(rating) : undefined, is_open })
+      .update({ business_name, owner_name, phone, address, category, mobility_type, sound_signal, rating: rating !== undefined ? parseFloat(rating) : undefined, is_open, start_time: start_time || null, end_time: end_time || null })
       .eq('id', id)
       .select().single();
       
     if (error) throw error;
+
+    if (services && Array.isArray(services)) {
+      await supabase.from('artisan_services').delete().eq('artisan_id', id);
+      for (const s of services) {
+        const { data: srvData } = await supabase.from('services').upsert([{ name: s }], { onConflict: 'name' }).select().single();
+        if (srvData) {
+          await supabase.from('artisan_services').insert([{ artisan_id: id, service_id: srvData.id }]);
+        }
+      }
+    }
+    
     res.json({ success: true, data });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update artisan.' });

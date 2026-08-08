@@ -259,6 +259,27 @@ export default function ManageArtisansTab({ adminPin }: { adminPin: string }) {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-400 mb-1">Start Time (Optional)</label>
+                    <input 
+                      type="time" 
+                      value={editingArtisan.start_time || ''} 
+                      onChange={(e) => setEditingArtisan({...editingArtisan, start_time: e.target.value})}
+                      className="w-full bg-[#1E293B] border border-slate-700/50 rounded-xl px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500/50 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-400 mb-1">End Time (Optional)</label>
+                    <input 
+                      type="time" 
+                      value={editingArtisan.end_time || ''} 
+                      onChange={(e) => setEditingArtisan({...editingArtisan, end_time: e.target.value})}
+                      className="w-full bg-[#1E293B] border border-slate-700/50 rounded-xl px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500/50 outline-none"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-slate-400 mb-1">Services (comma separated)</label>
                   <input 
