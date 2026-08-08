@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { Loader2, MapPin } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Analytics } from '@vercel/analytics/react';
 import { toast } from 'sonner';
 import AnimatedBackground from './components/AnimatedBackground';
