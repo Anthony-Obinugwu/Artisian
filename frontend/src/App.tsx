@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import AnimatedBackground from './components/AnimatedBackground';
 import { CATEGORY_ICONS } from './components/CategoryIcons';
 import BottomSheet from './components/BottomSheet';
+import artisianGif from './assets/Artisian.gif';
+import artisianPng from './assets/Artisian.png';
 
 // Code-split the heavy map and list components so they don't block the landing page load
 const ArtisanMap = lazy(() => import('./components/ArtisanMap'));
@@ -26,6 +28,8 @@ export type Artisan = {
   mobility_type: string;
   sound_signal: string | null;
   hotspots: any[];
+  start_time?: string;
+  end_time?: string;
 };
 
 function App() {
@@ -46,6 +50,25 @@ function App() {
   const [contributors, setContributors] = useState<any[]>([]);
   const [loadingContributors, setLoadingContributors] = useState(false);
 
+  const checkIsNightShift = () => {
+    try {
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Africa/Lagos',
+        hour: 'numeric',
+        hour12: false
+      });
+      const hour = parseInt(formatter.format(new Date()), 10);
+      return hour >= 19 || hour < 6;
+    } catch (e) {
+      // Fallback if timezone not supported
+      const hour = new Date().getHours();
+      return hour >= 19 || hour < 6;
+    }
+  };
+
+  const [isNightShift, setIsNightShift] = useState<boolean>(checkIsNightShift());
+  const [showNightInfoPopover, setShowNightInfoPopover] = useState<boolean>(false);
+
   // Preload the heavy map library in the background 1 second after the landing page is interactive
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -56,11 +79,23 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const timer = setInterval(() => {
+      setIsNightShift(checkIsNightShift());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (isNightShift) {
+      setIsDark(true);
+      return;
+    }
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    setIsDark(mediaQuery.matches);
     const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
     mediaQuery.addEventListener('change', handler);
     return () => mediaQuery.removeEventListener('change', handler);
-  }, []);
+  }, [isNightShift]);
 
   useEffect(() => {
     if (showAbout && contributors.length === 0 && !loadingContributors) {
@@ -174,11 +209,17 @@ function App() {
   if (isLoading) {
     return (
       <>
-        <div className="flex flex-col items-center justify-center min-h-screen bg-[#060B18] relative z-0">
-          <AnimatedBackground />
+        <div className="flex flex-col items-center justify-center min-h-screen bg-[#060B18] relative z-0 overflow-hidden">
+          {/* Blurred Background GIF */}
+          <img
+            src={artisianGif}
+            alt="Loading background"
+            className="absolute inset-0 w-full h-full object-cover opacity-50 blur-sm z-0"
+          />
+          <div className="absolute inset-0 bg-[#060B18]/40 z-0"></div>
+
           <div className="relative z-10 flex flex-col items-center">
-            <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
-            <p className="text-lg font-medium text-slate-300">Chill these npcs are on it...</p>
+            <p className="text-xl font-bold text-white drop-shadow-md animate-pulse">Chill these npcs are on it...</p>
           </div>
         </div>
         <Analytics />
@@ -191,12 +232,35 @@ function App() {
       <>
         <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-950 md:flex-row overflow-hidden relative">
           <Suspense fallback={
-            <div className="absolute inset-0 flex items-center justify-center bg-[#060B18] z-50">
-              <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#060B18] z-50 overflow-hidden">
+              <img
+                src={artisianGif}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover opacity-50 blur-sm z-0"
+              />
+              <div className="absolute inset-0 bg-[#060B18]/40 z-0"></div>
+              <div className="relative z-10 flex flex-col items-center">
+                {/* <p className="text-xl font-bold text-white drop-shadow-md animate-pulse">Loading map...</p> */}
+              </div>
             </div>
           }>
             {/* Filters Bar */}
             <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 w-full max-w-lg px-4 hidden md:flex flex-col gap-2">
+              {isNightShift && (
+                <div className="flex justify-center mb-1 relative">
+                  <button
+                    onClick={() => setShowNightInfoPopover(!showNightInfoPopover)}
+                    className="bg-indigo-900/90 text-indigo-200 border border-indigo-500/50 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest shadow-[0_0_15px_rgba(99,102,241,0.5)] flex items-center gap-2 hover:bg-indigo-800 transition-colors"
+                  >
+                    <span className="text-sm">🌙</span> Night Shift Active
+                  </button>
+                  {showNightInfoPopover && (
+                    <div className="absolute top-full mt-2 w-64 bg-slate-900 text-slate-200 p-3 rounded-xl border border-slate-700 shadow-2xl text-xs z-50 text-center animate-in fade-in zoom-in duration-200">
+                      Night-only artisans are now active on the map. These artisans operate exclusively during nighttime hours.
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="flex gap-2 overflow-x-auto no-scrollbar bg-[#0F172A]/80 backdrop-blur-xl p-2.5 rounded-2xl border border-slate-700/50 shadow-2xl">
                 {[
                   { id: 'all', label: 'All' },
@@ -273,6 +337,21 @@ function App() {
                 hideBackdrop={true}
               >
                 <div className="px-4 pb-2 border-b border-slate-800 flex flex-col gap-2">
+                  {isNightShift && (
+                    <div className="flex justify-center mt-2 relative">
+                      <button
+                        onClick={() => setShowNightInfoPopover(!showNightInfoPopover)}
+                        className="bg-indigo-900/90 text-indigo-200 border border-indigo-500/50 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest shadow-[0_0_15px_rgba(99,102,241,0.5)] flex items-center gap-2"
+                      >
+                        <span className="text-sm">🌙</span> Night Shift
+                      </button>
+                      {showNightInfoPopover && (
+                        <div className="absolute bottom-full mb-2 w-64 bg-slate-900 text-slate-200 p-3 rounded-xl border border-slate-700 shadow-2xl text-xs z-50 text-center animate-in fade-in slide-in-from-bottom-2 duration-200">
+                          Night-only artisans are now active on the map. They operate exclusively during nighttime hours.
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 pt-2">
                     {[
                       { id: 'all', label: 'All' },
@@ -336,8 +415,8 @@ function App() {
 
       <div className="max-w-[420px] w-full bg-[#0F172A]/90 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-slate-800/80 relative z-10">
         <div className="p-10 text-center flex flex-col items-center">
-          <div className="w-20 h-20 bg-[#172554] rounded-full flex flex-col items-center justify-center mx-auto mb-4 shadow-[0_0_20px_rgba(37,99,235,0.1)] border border-blue-900/50 overflow-hidden text-blue-400">
-            <MapPin className="w-12 h-12" />
+          <div className="pointer-events-none hover:scale-110 transition-transform duration-700 ease-out mx-auto mb-6 relative">
+            <img src={artisianPng} alt="Artisan Logo" className="w-24 h-24 sm:w-32 sm:h-32 opacity-80 relative z-10 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] hover:drop-shadow-[0_0_25px_rgba(59,130,246,0.8)] transition-all duration-500" />
           </div>
 
           <div className="flex items-center justify-center text-3xl font-bold tracking-tight mb-8">
@@ -390,7 +469,7 @@ function App() {
             Artisan is an open-source project that helps people quickly locate nearby vulcanizers, tailors, and cobblers during emergencies. It was built to prove that some of the most meaningful software isn't measured by revenue, but by the people it helps.
           </p>
           <h3 className="text-lg font-semibold text-white mb-4">Contributors</h3>
-          
+
           {loadingContributors ? (
             <div className="flex justify-center py-4">
               <Loader2 className="w-6 h-6 animate-spin text-blue-500" />

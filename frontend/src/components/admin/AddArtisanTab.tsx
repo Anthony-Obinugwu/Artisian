@@ -25,7 +25,9 @@ export default function AddArtisanTab({ adminPin }: { adminPin: string }) {
     category: 'vulcanizer',
     mobility_type: 'STATIC',
     sound_signal: '',
-    rating: '5.0'
+    rating: '5.0',
+    start_time: '',
+    end_time: ''
   });
 
   const [hotspots, setHotspots] = useState<any[]>([]);
@@ -183,6 +185,8 @@ export default function AddArtisanTab({ adminPin }: { adminPin: string }) {
           category: formData.category === 'other' ? customCategory : formData.category,
           mobility_type: formData.mobility_type,
           sound_signal: formData.sound_signal,
+          start_time: formData.start_time,
+          end_time: formData.end_time,
           hotspots: hotspots.map(h => ({
             ...h,
             lat: parseFloat(h.lat),
@@ -207,7 +211,9 @@ export default function AddArtisanTab({ adminPin }: { adminPin: string }) {
         longitude: '',
         address: '',
         sound_signal: '',
-        rating: '5.0'
+        rating: '5.0',
+        start_time: '',
+        end_time: ''
       }));
       setHotspots([]);
       setCustomCategory('');
@@ -493,6 +499,28 @@ export default function AddArtisanTab({ adminPin }: { adminPin: string }) {
                 onChange={handleInputChange}
                 className="w-full bg-[#0F172A]/80 backdrop-blur-md border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all shadow-inner"
                 placeholder="e.g. 5.0"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1">Start Time (Optional)</label>
+              <input
+                type="time"
+                name="start_time"
+                value={formData.start_time}
+                onChange={handleInputChange}
+                className="w-full bg-[#0F172A]/80 backdrop-blur-md border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all shadow-inner"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-1">End Time (Optional)</label>
+              <input
+                type="time"
+                name="end_time"
+                value={formData.end_time}
+                onChange={handleInputChange}
+                className="w-full bg-[#0F172A]/80 backdrop-blur-md border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all shadow-inner"
               />
             </div>
           </div>
