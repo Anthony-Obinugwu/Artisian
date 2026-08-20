@@ -3,9 +3,8 @@ import { Loader2 } from 'lucide-react';
 import { Analytics } from '@vercel/analytics/react';
 import { toast } from 'sonner';
 import AnimatedBackground from './components/AnimatedBackground';
-import { CATEGORY_ICONS } from './components/CategoryIcons';
+import ArtisanFilters from './components/ArtisanFilters';
 import BottomSheet from './components/BottomSheet';
-import artisianGif from './assets/Artisian.gif';
 import artisianPng from './assets/Artisian.png';
 
 // Code-split the heavy map and list components so they don't block the landing page load
@@ -108,8 +107,6 @@ function App() {
     }
   }, [showAbout]);
 
-  // Intentionally blanked out duplicated useEffect
-
   const fetchRoute = async (dest: Artisan, mode: 'driving' | 'walking') => {
     if (!location) return;
     try {
@@ -210,15 +207,9 @@ function App() {
     return (
       <>
         <div className="flex flex-col items-center justify-center min-h-screen bg-[#060B18] relative z-0 overflow-hidden">
-          {/* Blurred Background GIF */}
-          <img
-            src={artisianGif}
-            alt="Loading background"
-            className="absolute inset-0 w-full h-full object-cover opacity-50 blur-sm z-0"
-          />
-          <div className="absolute inset-0 bg-[#060B18]/40 z-0"></div>
-
-          <div className="relative z-10 flex flex-col items-center">
+          <div className="absolute w-64 h-64 bg-blue-600/20 rounded-full blur-3xl animate-pulse z-0" />
+          <div className="relative z-10 flex flex-col items-center gap-4">
+            <img src={artisianPng} alt="Loading" className="w-24 h-24 opacity-80 animate-pulse drop-shadow-[0_0_20px_rgba(59,130,246,0.6)]" />
             <p className="text-xl font-bold text-white drop-shadow-md animate-pulse">Chill these npcs are on it...</p>
           </div>
         </div>
@@ -233,71 +224,22 @@ function App() {
         <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-950 md:flex-row overflow-hidden relative">
           <Suspense fallback={
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#060B18] z-50 overflow-hidden">
-              <img
-                src={artisianGif}
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover opacity-50 blur-sm z-0"
-              />
-              <div className="absolute inset-0 bg-[#060B18]/40 z-0"></div>
               <div className="relative z-10 flex flex-col items-center">
-                {/* <p className="text-xl font-bold text-white drop-shadow-md animate-pulse">Loading map...</p> */}
+                <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
               </div>
             </div>
           }>
-            {/* Filters Bar */}
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 w-full max-w-lg px-4 hidden md:flex flex-col gap-2">
-              {isNightShift && (
-                <div className="flex justify-center mb-1 relative">
-                  <button
-                    onClick={() => setShowNightInfoPopover(!showNightInfoPopover)}
-                    className="bg-indigo-900/90 text-indigo-200 border border-indigo-500/50 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest shadow-[0_0_15px_rgba(99,102,241,0.5)] flex items-center gap-2 hover:bg-indigo-800 transition-colors"
-                  >
-                    <span className="text-sm">🌙</span> Night Shift Active
-                  </button>
-                  {showNightInfoPopover && (
-                    <div className="absolute top-full mt-2 w-64 bg-slate-900 text-slate-200 p-3 rounded-xl border border-slate-700 shadow-2xl text-xs z-50 text-center animate-in fade-in zoom-in duration-200">
-                      Night-only artisans are now active on the map. These artisans operate exclusively during nighttime hours.
-                    </div>
-                  )}
-                </div>
-              )}
-              <div className="flex gap-2 overflow-x-auto no-scrollbar bg-[#0F172A]/80 backdrop-blur-xl p-2.5 rounded-2xl border border-slate-700/50 shadow-2xl">
-                {[
-                  { id: 'all', label: 'All' },
-                  { id: 'vulcanizer', label: 'Vulcanizer' },
-                  { id: 'tailor', label: 'Tailor' },
-                  { id: 'cobbler', label: 'Cobbler' },
-                  { id: 'nail_cutter', label: 'Nails' },
-                  { id: 'barber', label: 'Barber' }
-                ].map(cat => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setActiveCategory(cat.id)}
-                    className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center gap-2 ${activeCategory === cat.id ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'}`}
-                  >
-                    <span>{CATEGORY_ICONS[cat.id]}</span> {cat.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex justify-center gap-2">
-                <div className="bg-[#0F172A]/80 backdrop-blur-xl p-1.5 rounded-full border border-slate-700/50 shadow-xl flex">
-                  {[
-                    { id: 'all', label: 'Any Mobility' },
-                    { id: 'STATIC', label: 'Fixed Shops' },
-                    { id: 'MOBILE', label: 'Mobile/Walking' }
-                  ].map(mob => (
-                    <button
-                      key={mob.id}
-                      onClick={() => setActiveMobility(mob.id)}
-                      className={`px-4 py-1 rounded-full text-xs font-medium transition-colors ${activeMobility === mob.id ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}
-                    >
-                      {mob.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
+            {/* Desktop Filters Bar */}
+            <ArtisanFilters
+              activeCategory={activeCategory}
+              onCategoryChange={setActiveCategory}
+              activeMobility={activeMobility}
+              onMobilityChange={setActiveMobility}
+              isNightShift={isNightShift}
+              showNightInfoPopover={showNightInfoPopover}
+              onToggleNightInfo={() => setShowNightInfoPopover(!showNightInfoPopover)}
+              isMobile={false}
+            />
 
             {/* Full screen map on mobile, half screen on desktop */}
             <div className="flex-1 relative h-full w-full z-0">
@@ -336,58 +278,16 @@ function App() {
                 onSnapChange={setSnap}
                 hideBackdrop={true}
               >
-                <div className="px-4 pb-2 border-b border-slate-800 flex flex-col gap-2">
-                  {isNightShift && (
-                    <div className="flex justify-center mt-2 relative">
-                      <button
-                        onClick={() => setShowNightInfoPopover(!showNightInfoPopover)}
-                        className="bg-indigo-900/90 text-indigo-200 border border-indigo-500/50 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest shadow-[0_0_15px_rgba(99,102,241,0.5)] flex items-center gap-2"
-                      >
-                        <span className="text-sm">🌙</span> Night Shift
-                      </button>
-                      {showNightInfoPopover && (
-                        <div className="absolute bottom-full mb-2 w-64 bg-slate-900 text-slate-200 p-3 rounded-xl border border-slate-700 shadow-2xl text-xs z-50 text-center animate-in fade-in slide-in-from-bottom-2 duration-200">
-                          Night-only artisans are now active on the map. They operate exclusively during nighttime hours.
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 pt-2">
-                    {[
-                      { id: 'all', label: 'All' },
-                      { id: 'vulcanizer', label: 'Vulcanizer' },
-                      { id: 'tailor', label: 'Tailor' },
-                      { id: 'cobbler', label: 'Cobbler' },
-                      { id: 'nail_cutter', label: 'Nails' },
-                      { id: 'barber', label: 'Barber' }
-                    ].map(cat => (
-                      <button
-                        key={cat.id}
-                        onClick={() => setActiveCategory(cat.id)}
-                        className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5 ${activeCategory === cat.id ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300'}`}
-                      >
-                        <span>{CATEGORY_ICONS[cat.id]}</span> {cat.label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex justify-center gap-2 mb-2">
-                    <div className="bg-slate-800 p-1 rounded-full flex w-full">
-                      {[
-                        { id: 'all', label: 'Any' },
-                        { id: 'STATIC', label: 'Shops' },
-                        { id: 'MOBILE', label: 'Mobile' }
-                      ].map(mob => (
-                        <button
-                          key={mob.id}
-                          onClick={() => setActiveMobility(mob.id)}
-                          className={`flex-1 py-1 rounded-full text-xs font-medium transition-colors ${activeMobility === mob.id ? 'bg-slate-600 text-white' : 'text-slate-400'}`}
-                        >
-                          {mob.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                <ArtisanFilters
+                  activeCategory={activeCategory}
+                  onCategoryChange={setActiveCategory}
+                  activeMobility={activeMobility}
+                  onMobilityChange={setActiveMobility}
+                  isNightShift={isNightShift}
+                  showNightInfoPopover={showNightInfoPopover}
+                  onToggleNightInfo={() => setShowNightInfoPopover(!showNightInfoPopover)}
+                  isMobile={true}
+                />
                 <ArtisanList
                   artisans={artisans}
                   onShowRoute={(dest) => {
@@ -420,7 +320,6 @@ function App() {
           </div>
 
           <div className="flex items-center justify-center text-3xl font-bold tracking-tight mb-8">
-            {/* <span className="text-white">pump&nbsp;</span> */}
             <span className="text-[#3b82f6]">Artisan</span>
           </div>
 
@@ -447,8 +346,8 @@ function App() {
         </div>
       </div>
 
-      <div className="absolute bottom-6 left-0 right-0 text-center z-10">
-        <p className="text-slate-500 text-xs">
+      <div className="absolute bottom-6 left-0 right-0 text-center z-10 flex items-center justify-center gap-4 text-xs text-slate-500">
+        <p>
           © 2026{' '}
           <button
             onClick={() => setShowAbout(true)}
@@ -457,6 +356,10 @@ function App() {
             TheseNPCs
           </button>
         </p>
+        <span>•</span>
+        <a href="/add" className="text-slate-400 hover:text-white transition-colors underline underline-offset-4">
+          Admin Portal
+        </a>
       </div>
 
       <BottomSheet isOpen={showAbout} onClose={() => setShowAbout(false)}>
