@@ -29,14 +29,14 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      return callback(null, true);
-    }
-
-    console.error(`[CORS BLOCK] Origin '${origin}' is not allowed. Expected: '${frontendUrl}'`);
-    var msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-    return callback(new Error(msg), false);
+  if (allowedOrigins.indexOf(origin) !== -1 || /^https:\/\/.*\.vercel\.app$/.test(origin)) {
+    return callback(null, true);
   }
+
+  console.error(`[CORS BLOCK] Origin '${origin}' is not allowed. Expected: '${frontendUrl}'`);
+  var msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+  return callback(new Error(msg), false);
+}
 }));
 
 app.use(express.json({ limit: '10mb' }));
@@ -79,8 +79,14 @@ const authenticateAdmin = (req: express.Request, res: express.Response, next: ex
 };
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
-// Use the service role key to bypass RLS since we verify the admin pin in our backend
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+
+if (!supabaseServiceKey) {
+  console.warn('[SECURITY WARNING] SUPABASE_SERVICE_ROLE_KEY is missing! Using ANON_KEY fallback which may fail RLS policies.');
+}
+
+const supabaseKey = supabaseServiceKey || supabaseAnonKey || '';
 const supabase = createClient(supabaseUrl, supabaseKey, {
   realtime: { transport: WebSocket as any }
 });
@@ -156,12 +162,20 @@ app.post('/api/artisans', adminRateLimiter, authenticateAdmin, async (req, res) 
       return res.status(500).json({ error: 'Failed to insert into database.', details: artisanError });
     }
 
+    // Batch upsert services and batch insert artisan_services (avoids N+1 query overhead)
     if (services && Array.isArray(services) && services.length > 0) {
-      for (const s of services) {
-        const { data: srvData } = await supabase.from('services').upsert([{ name: s }], { onConflict: 'name' }).select().single();
-        if (srvData) {
-          await supabase.from('artisan_services').insert([{ artisan_id: artisanData.id, service_id: srvData.id }]);
-        }
+      const servicesToUpsert = services.map((s: string) => ({ name: s }));
+      const { data: srvDataList } = await supabase
+        .from('services')
+        .upsert(servicesToUpsert, { onConflict: 'name' })
+        .select();
+
+      if (srvDataList && srvDataList.length > 0) {
+        const artisanServicesToInsert = srvDataList.map((srv) => ({
+          artisan_id: artisanData.id,
+          service_id: srv.id
+        }));
+        await supabase.from('artisan_services').insert(artisanServicesToInsert);
       }
     }
 
@@ -224,12 +238,22 @@ app.put('/api/artisans/:id', authenticateAdmin, async (req, res) => {
       
     if (error) throw error;
 
+    // Batch update artisan services (avoids N+1 query overhead)
     if (services && Array.isArray(services)) {
       await supabase.from('artisan_services').delete().eq('artisan_id', id);
-      for (const s of services) {
-        const { data: srvData } = await supabase.from('services').upsert([{ name: s }], { onConflict: 'name' }).select().single();
-        if (srvData) {
-          await supabase.from('artisan_services').insert([{ artisan_id: id, service_id: srvData.id }]);
+      if (services.length > 0) {
+        const servicesToUpsert = services.map((s: string) => ({ name: s }));
+        const { data: srvDataList } = await supabase
+          .from('services')
+          .upsert(servicesToUpsert, { onConflict: 'name' })
+          .select();
+
+        if (srvDataList && srvDataList.length > 0) {
+          const artisanServicesToInsert = srvDataList.map((srv) => ({
+            artisan_id: id,
+            service_id: srv.id
+          }));
+          await supabase.from('artisan_services').insert(artisanServicesToInsert);
         }
       }
     }
