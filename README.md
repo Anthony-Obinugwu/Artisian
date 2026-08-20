@@ -1,36 +1,44 @@
-# 🛞 Pump Me (Vulcanizer Finder)
+# 🛞 Artisan (Street Artisan & Vulcanizer Finder)
 
 > *"For we are God's handiwork, created in Christ Jesus to do good works, God prepared in advance for us to do." - Ephesians 2:10*
 
-**Pump Me** is an open-source, beautifully designed web application built to help drivers quickly locate nearby roadside vulcanizers during tire emergencies. 
+**Artisan** is an open-source, beautifully designed full-stack web application built to help drivers and individuals quickly locate nearby roadside vulcanizers, tailors, cobblers, nail cutters, barbers, and mobile vendors during emergencies. 
 
 It was built to prove a simple point: **Some of the most meaningful software isn't measured by revenue, but by the people it helps.**
+
+For detailed architecture records, audit history, and internal guidelines, see [internal_reference.md](internal_reference.md).
 
 ---
 
 ## ✨ Features
-- **Instant Location Detection:** One-click GPS location access to find help fast.
-- **Interactive Map:** A sleek, dark-mode optimized Mapbox interface.
-- **Routing & Directions:** Get exact distance, estimated walking/driving time, and live routing to the nearest vulcanizer.
-- **One-Tap Calling:** Instantly call the vulcanizer directly from the app.
-- **No Sign-Up Required:** Built for emergencies. No accounts, no friction, no hassle.
+- **Instant GPS & Location Detection:** One-click location access with smart IP-geolocation fallback.
+- **Multi-Category Support:** Locate vulcanizers, tailors, cobblers, nail cutters, barbers, and custom street artisans.
+- **Fixed Shops & Mobile Vendors:** Track stationary shops as well as mobile vendors with active scheduled hotspots and auditory cues (*"Listen for iron scissors clicking"*).
+- **Night Shift Mode:** Automatic activation and map highlight of night-only service providers during evening and nighttime hours.
+- **Interactive Map:** Dark-mode optimized Mapbox GL interface with custom edge zoom sliders.
+- **Routing & Directions:** Get exact distance, estimated driving/walking time, and live animated route overlay.
+- **One-Tap Contact & Navigation:** Call service providers directly or open direct turn-by-turn routes in Google Maps.
+- **Admin Management Dashboard:** Secure `/add` portal for managing artisans, services, mobile hotspots, contributors, and media uploads.
+- **Zero Friction:** No sign-up or accounts required for emergency users.
+
+---
 
 ## 🛠 Tech Stack
-This project is a modern full-stack application split into two parts:
 
-### Frontend
-- **React 18** (Vite)
-- **TypeScript**
-- **Tailwind CSS** (for styling and animations)
-- **Mapbox GL JS** (via `react-map-gl` for the interactive map)
-- **Lucide React** (icons)
-- **Vaul** (for sleek mobile bottom-sheet drawers)
+### Frontend (`/frontend`)
+- **React 19** & **TypeScript** (Vite v8)
+- **Tailwind CSS v4** (Utility styling & animations)
+- **Mapbox GL JS** via `react-map-gl` (Interactive geospatial map)
+- **Vaul** (Mobile bottom-sheet drawer)
+- **Sonner** (Toast notifications)
+- **Lucide React** (Modern iconography)
+- **Vercel Analytics**
 
-### Backend
-- **Node.js & Express**
-- **TypeScript**
-- **Supabase** (PostgreSQL)
-- **PostGIS** (for `st_dwithin` geospatial radius queries)
+### Backend (`/backend`)
+- **Node.js** & **Express** (TypeScript)
+- **Supabase** (PostgreSQL + PostGIS extension)
+- **PostGIS RPC Functions** (`find_nearby_artisans` for spatial geography radius queries)
+- **Security:** Timing-safe PIN authentication (`crypto.timingSafeEqual`) and `express-rate-limit`
 
 ---
 
@@ -38,61 +46,81 @@ This project is a modern full-stack application split into two parts:
 
 ### Prerequisites
 - Node.js (v20+)
-- A Supabase Project (with PostGIS enabled)
-- A Mapbox API Key
+- npm (v10+)
+- A Supabase project with PostGIS extension enabled
+- A Mapbox API Public Access Token
+
+---
 
 ### 1. Database Setup (Supabase)
-Create a table named `vulcanizers` with columns for `id`, `business_name`, `phone`, `latitude`, `longitude`. Then create the following PostGIS RPC function to handle radius searches:
+Run the SQL migration scripts located in [`backend/migrations/`](backend/migrations) sequentially in your Supabase SQL Editor:
 
-```sql
-create or replace function find_nearby_vulcanizers(user_lat float, user_lng float, radius_km float)
-returns setof vulcanizers as $$
-begin
-  return query
-  select *
-  from vulcanizers
-  where st_dwithin(
-    st_setsrid(st_makepoint(longitude, latitude), 4326)::geography,
-    st_setsrid(st_makepoint(user_lng, user_lat), 4326)::geography,
-    radius_km * 1000
-  );
-end;
-$$ language plpgsql;
-```
+1. `00_init_legacy.sql`
+2. `01_street_artisans.sql`
+3. `02_contributors.sql`
+4. `03_storage_bucket.sql`
+5. `04_artisan_operating_hours.sql`
+6. `05_schema_improvements.sql`
+
+---
 
 ### 2. Backend Setup
 ```bash
+# Navigate to backend directory
 cd backend
+
+# Install dependencies
 npm install
+
+# Create environment file
+cp .env.example .env
 ```
-Create a `.env` file in the `backend` directory:
+
+Configure your `backend/.env` file:
 ```env
 PORT=3001
-SUPABASE_URL=your_supabase_url
+SUPABASE_URL=https://your-supabase-project.supabase.co
 SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+ADMIN_PIN=1234
 FRONTEND_URL=http://localhost:5173
 ```
-Run the backend:
+
+Start the backend development server:
 ```bash
 npm run dev
 ```
+The API server will run at `http://localhost:3001`.
+
+---
 
 ### 3. Frontend Setup
 ```bash
+# Navigate to frontend directory
 cd frontend
+
+# Install dependencies
 npm install
 ```
-Create a `.env.local` file in the `frontend` directory:
+
+Create a `frontend/.env.local` file:
 ```env
-VITE_MAPBOX_TOKEN=your_mapbox_public_token
+VITE_MAPBOX_TOKEN=pk.your_mapbox_public_token
 VITE_API_URL=http://localhost:3001
 ```
-Run the frontend:
+
+Start the frontend development server:
 ```bash
 npm run dev
 ```
+Open `http://localhost:5173` in your browser. Access the Admin Dashboard at `http://localhost:5173/add`.
+
+---
+
+## 📖 System Audit & Documentation
+For internal design principles, performance guidelines, and audit reports, refer to [internal_reference.md](internal_reference.md).
 
 ---
 
 ## 📜 License
-This project is completely free to use and open-source. For all those who use this solution, for those who will and for those who will not use this project, God bless you still. 
+This project is completely free to use and open-source. For all those who use this solution, for those who will and for those who will not use this project, God bless you still.
