@@ -1,4 +1,4 @@
-# 🛞 Artisan (Street Artisan & Vulcanizer Finder)
+# Artisan (Street Artisan & Vulcanizer Finder)
 
 > *"For we are God's handiwork, created in Christ Jesus to do good works, God prepared in advance for us to do." - Ephesians 2:10*
 
