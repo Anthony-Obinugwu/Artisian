@@ -68,14 +68,11 @@ function App() {
   const [isNightShift, setIsNightShift] = useState<boolean>(checkIsNightShift());
   const [showNightInfoPopover, setShowNightInfoPopover] = useState<boolean>(false);
 
-  // Preload the heavy map library in the background 1 second after the landing page is interactive
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      import('./components/ArtisanMap');
-      import('./components/ArtisanList');
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
+  // Preload the heavy map library only when user shows intent
+  const preloadMapComponents = () => {
+    import('./components/ArtisanMap');
+    import('./components/ArtisanList');
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -333,6 +330,8 @@ function App() {
 
           <button
             onClick={requestLocation}
+            onMouseEnter={preloadMapComponents}
+            onTouchStart={preloadMapComponents}
             className="w-full bg-[#2563EB] hover:bg-blue-600 text-white font-semibold py-4 px-6 rounded-2xl transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] flex items-center justify-center gap-3 text-lg"
           >
             Allow Location Access

@@ -137,31 +137,41 @@ export default function ArtisanMap({ userLocation, artisans, activeRoute, routin
           );
         }
 
-        // Render hotspot pins if mobile
-        if (isMobile && v.hotspots && v.hotspots.length > 0) {
-          v.hotspots.forEach((h: any) => {
-            if (h.lng && h.lat) {
-              allPins.push(
-                <Marker
-                  key={`hotspot-${h.id}`}
-                  longitude={h.lng}
-                  latitude={h.lat}
-                  anchor="center"
-                  style={{ pointerEvents: 'none' }}
-                >
-                  <div className={`w-4 h-4 bg-blue-500/20 rounded-full flex items-center justify-center pointer-events-none ${isFaded ? 'opacity-30' : 'animate-pulse'}`}>
-                    <div className="w-2.5 h-2.5 bg-blue-500 rounded-full shadow-[0_0_12px_rgba(59,130,246,1)]" />
-                  </div>
-                </Marker>
-              );
-            }
-          });
-        }
+        // Hotspots are now rendered via GeoJSON Source/Layer for performance
       });
       return allPins;
     },
     [artisans, activeRoute, routeDestination, selectedArtisan, onPinClick]
   );
+
+  const hotspotsGeoJSON = useMemo(() => {
+    const features: any[] = [];
+    artisans.forEach((v) => {
+      const isMobile = v.mobility_type === 'MOBILE';
+      const isFaded = activeRoute && routeDestination?.id !== v.id;
+      if (isMobile && v.hotspots && v.hotspots.length > 0) {
+        v.hotspots.forEach((h: any) => {
+          if (h.lng && h.lat) {
+            features.push({
+              type: 'Feature',
+              properties: {
+                id: h.id,
+                faded: isFaded
+              },
+              geometry: {
+                type: 'Point',
+                coordinates: [h.lng, h.lat]
+              }
+            });
+          }
+        });
+      }
+    });
+    return {
+      type: 'FeatureCollection',
+      features
+    };
+  }, [artisans, activeRoute, routeDestination]);
 
   return (
     <div className="relative w-full h-full">
@@ -249,6 +259,32 @@ export default function ArtisanMap({ userLocation, artisans, activeRoute, routin
           />
         </Source>
       )}
+
+      {/* Hotspots Layer */}
+      <Source id="hotspots-source" type="geojson" data={hotspotsGeoJSON}>
+        {/* Outer Glow */}
+        <Layer 
+          id="hotspots-layer-outer"
+          type="circle"
+          source="hotspots-source"
+          paint={{
+            'circle-radius': 8,
+            'circle-color': '#3b82f6',
+            'circle-opacity': ['case', ['boolean', ['get', 'faded'], false], 0.05, 0.2]
+          }}
+        />
+        {/* Inner Dot */}
+        <Layer 
+          id="hotspots-layer-inner"
+          type="circle"
+          source="hotspots-source"
+          paint={{
+            'circle-radius': 5,
+            'circle-color': '#3b82f6',
+            'circle-opacity': ['case', ['boolean', ['get', 'faded'], false], 0.3, 1]
+          }}
+        />
+      </Source>
 
       {/* User Location Marker */}
       <Marker longitude={userLocation.lng} latitude={userLocation.lat} anchor="center">
