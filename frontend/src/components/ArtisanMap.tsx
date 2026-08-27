@@ -168,7 +168,7 @@ export default function ArtisanMap({ userLocation, artisans, activeRoute, routin
       }
     });
     return {
-      type: 'FeatureCollection',
+      type: 'FeatureCollection' as const,
       features
     };
   }, [artisans, activeRoute, routeDestination]);
