@@ -247,10 +247,9 @@ export function DrawerPopup({
           {showCloseButton && (
             <DrawerPrimitive.Close
               aria-label="Close"
-              className="absolute end-2 top-2 text-slate-400 hover:text-white"
-              render={<Button size="icon" variant="ghost" />}
+              className="absolute right-4 top-4 z-50 flex items-center justify-center w-8 h-8 rounded-full bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors cursor-pointer border border-slate-700/50 outline-none"
             >
-              <XIcon />
+              <XIcon className="w-4 h-4" />
             </DrawerPrimitive.Close>
           )}
           {showBar && <DrawerBar />}

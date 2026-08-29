@@ -57,6 +57,14 @@ function App() {
   const [contributors, setContributors] = useState<any[]>([]);
   const [loadingContributors, setLoadingContributors] = useState(false);
 
+  const [isMobileWindow, setIsMobileWindow] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobileWindow(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const checkIsNightShift = () => {
     try {
       const formatter = new Intl.DateTimeFormat('en-US', {
@@ -365,42 +373,50 @@ function App() {
         </p>
       </div>
 
-      <Drawer position="right" open={showAbout} onOpenChange={setShowAbout}>
-        <DrawerPopup variant="inset" showCloseButton={true}>
-          <DrawerHeader>
-            <DrawerTitle>About the Project</DrawerTitle>
-            <DrawerDescription className="italic border-l-2 border-blue-500/50 pl-3 mt-2 text-slate-400 text-xs">
+      <Drawer position={isMobileWindow ? "bottom" : "right"} open={showAbout} onOpenChange={setShowAbout}>
+        <DrawerPopup
+          variant={isMobileWindow ? "default" : "inset"}
+          showCloseButton={true}
+          showBar={isMobileWindow}
+          className="bg-[#0F172A] border-slate-800 text-slate-100 shadow-2xl max-h-[85vh] sm:max-h-full"
+        >
+          <DrawerHeader className="relative pr-12 pt-6 pb-2">
+            <DrawerTitle className="text-xl font-bold text-white">About the Project</DrawerTitle>
+            <DrawerDescription className="italic border-l-2 border-blue-500/60 pl-3 mt-3 text-slate-400 text-xs leading-relaxed">
               "For we are God's handiwork, created in Christ Jesus to do good works, God prepared in advance for us to do." - Ephesians 2:10
             </DrawerDescription>
           </DrawerHeader>
-          <DrawerPanel>
+          <DrawerPanel className="pt-2 pb-8">
             <div className="text-slate-300">
-              <p className="mb-8 leading-relaxed text-sm">
+              <p className="mb-6 leading-relaxed text-sm text-slate-300">
                 Artisan is an open-source project that helps people quickly locate nearby vulcanizers, tailors, and cobblers during emergencies. It was built to prove that some of the most meaningful software isn't measured by revenue, but by the people it helps.
               </p>
-              <h3 className="text-base font-semibold text-white mb-4">Contributors</h3>
+              
+              <div className="border-t border-slate-800/80 pt-6">
+                <h3 className="text-base font-semibold text-white mb-4">Contributors</h3>
 
-              {loadingContributors ? (
-                <div className="flex justify-center py-4">
-                  <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
-                </div>
-              ) : (
-                <ul className="space-y-4">
-                  {contributors.length === 0 ? (
-                    <li className="text-slate-500 italic text-sm">No contributors listed yet.</li>
-                  ) : (
-                    contributors.map(c => (
-                      <li key={c.id} className="flex items-center gap-4">
-                        <img src={c.image_url} alt={c.name} className="w-10 h-10 rounded-full object-cover bg-slate-800 border border-slate-700" />
-                        <div>
-                          <p className="text-white font-medium text-sm">{c.name}</p>
-                          <p className="text-xs text-slate-500">{c.role}</p>
-                        </div>
-                      </li>
-                    ))
-                  )}
-                </ul>
-              )}
+                {loadingContributors ? (
+                  <div className="flex justify-center py-6">
+                    <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                  </div>
+                ) : (
+                  <ul className="space-y-4">
+                    {contributors.length === 0 ? (
+                      <li className="text-slate-500 italic text-sm">No contributors listed yet.</li>
+                    ) : (
+                      contributors.map(c => (
+                        <li key={c.id} className="flex items-center gap-4 p-2 rounded-xl hover:bg-slate-800/50 transition-colors">
+                          <img src={c.image_url} alt={c.name} className="w-11 h-11 rounded-full object-cover bg-slate-800 border border-slate-700/80 shadow-sm" />
+                          <div>
+                            <p className="text-white font-semibold text-sm">{c.name}</p>
+                            <p className="text-xs text-slate-400">{c.role}</p>
+                          </div>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                )}
+              </div>
             </div>
           </DrawerPanel>
         </DrawerPopup>
