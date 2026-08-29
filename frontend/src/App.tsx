@@ -2,18 +2,12 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Analytics } from '@vercel/analytics/react';
 import { toast } from 'sonner';
-import AnimatedBackground from './components/AnimatedBackground';
 import ArtisanFilters from './components/ArtisanFilters';
 import BottomSheet from './components/BottomSheet';
-import {
-  Drawer,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-  DrawerPanel,
-  DrawerPopup
-} from './components/ui/drawer';
+import { WelcomeScreen } from '@/components/ui/onboarding-welcome-screen';
+import { WordRotate } from '@/components/ui/word-rotate';
 import artisianPng from './assets/Artisian.png';
+import heroStreetJpg from './assets/hero_street.jpg';
 
 // Code-split the heavy map and list components so they don't block the landing page load
 const ArtisanMap = lazy(() => import('./components/ArtisanMap'));
@@ -56,14 +50,6 @@ function App() {
   const [isDark, setIsDark] = useState<boolean>(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
   const [contributors, setContributors] = useState<any[]>([]);
   const [loadingContributors, setLoadingContributors] = useState(false);
-
-  const [isMobileWindow, setIsMobileWindow] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobileWindow(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const checkIsNightShift = () => {
     try {
@@ -323,104 +309,76 @@ function App() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#060B18] p-6 relative z-0 overflow-hidden">
-      <AnimatedBackground />
-
-      <div className="max-w-[420px] w-full bg-[#0F172A]/90 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-slate-800/80 relative z-10">
-        <div className="p-10 text-center flex flex-col items-center">
-          <div className="pointer-events-none hover:scale-110 transition-transform duration-700 ease-out mx-auto mb-6 relative">
-            <img src={artisianPng} alt="Artisan Logo" className="w-24 h-24 sm:w-32 sm:h-32 opacity-80 relative z-10 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)] hover:drop-shadow-[0_0_25px_rgba(59,130,246,0.8)] transition-all duration-500" />
+    <div className="flex flex-col items-center justify-center min-h-screen w-full bg-[#060B18] relative z-0 overflow-hidden">
+      <WelcomeScreen
+        imageUrl={heroStreetJpg}
+        title={
+          <div className="flex flex-col items-center gap-3">
+            <img src={artisianPng} alt="Artisan Logo" className="w-16 h-16 sm:w-20 sm:h-20 opacity-90 drop-shadow-[0_0_20px_rgba(59,130,246,0.6)] mb-1" />
+            <div className="flex flex-wrap items-center justify-center gap-x-2 text-center leading-tight">
+              <span>A map of</span>
+              <WordRotate
+                words={['vulcanizers', 'tailors', 'cobblers', 'barbers', 'nail cutters', 'service providers']}
+                className="text-blue-500 font-extrabold drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]"
+              />
+            </div>
           </div>
-
-          <div className="flex items-center justify-center text-3xl font-bold tracking-tight mb-8">
-            <span className="text-[#3b82f6]">Artisan</span>
-          </div>
-
-          <h1 className="text-[2.25rem] font-extrabold text-white mb-4 tracking-tight leading-tight">
-            A map of service providers
-          </h1>
-
-          <p className="text-slate-400 mb-8 text-lg leading-relaxed">
-            Flat tire? Torn shirt? Bad shoe?, We'll instantly locate the closest vulcanizers, tailors, and cobblers using your current location.
-          </p>
-
-          <button
-            onClick={requestLocation}
-            onMouseEnter={preloadMapComponents}
-            onTouchStart={preloadMapComponents}
-            className="w-full bg-[#2563EB] hover:bg-blue-600 text-white font-semibold py-4 px-6 rounded-2xl transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] flex items-center justify-center gap-3 text-lg"
-          >
-            Allow Location Access
-          </button>
-
-          <div className="w-full mt-6">
-            <p className="text-slate-500 text-xs italic">
+        }
+        description="The Service Provider Network"
+        buttonText="Allow Location Access"
+        onButtonClick={requestLocation}
+        onMouseEnterButton={preloadMapComponents}
+        onTouchStartButton={preloadMapComponents}
+        secondaryActionText={
+          <span>Learn about the project & contributors</span>
+        }
+        onSecondaryActionClick={() => setShowAbout(true)}
+        footerContent={
+          <div className="flex flex-col items-center gap-3 text-xs text-slate-500 mt-2">
+            <p className="italic max-w-xs text-center text-slate-500">
               We only use your location to find artisans near you. It's not stored, so relax.
             </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="absolute bottom-6 left-0 right-0 text-center z-10 flex items-center justify-center gap-4 text-xs text-slate-500">
-        <p>
-          © 2026{' '}
-          <button
-            onClick={() => setShowAbout(true)}
-            className="text-slate-400 hover:text-white transition-colors underline underline-offset-4"
-          >
-            TheseNPCs
-          </button>
-        </p>
-      </div>
-
-      <Drawer position={isMobileWindow ? "bottom" : "right"} open={showAbout} onOpenChange={setShowAbout}>
-        <DrawerPopup
-          variant={isMobileWindow ? "default" : "inset"}
-          showCloseButton={true}
-          showBar={isMobileWindow}
-          className="bg-[#0F172A] border-slate-800 text-slate-100 shadow-2xl max-h-[85vh] sm:max-h-full"
-        >
-          <DrawerHeader className="relative pr-12 pt-6 pb-2">
-            <DrawerTitle className="text-xl font-bold text-white">About the Project</DrawerTitle>
-            <DrawerDescription className="italic border-l-2 border-blue-500/60 pl-3 mt-3 text-slate-400 text-xs leading-relaxed">
-              "For we are God's handiwork, created in Christ Jesus to do good works, God prepared in advance for us to do." - Ephesians 2:10
-            </DrawerDescription>
-          </DrawerHeader>
-          <DrawerPanel className="pt-2 pb-8">
-            <div className="text-slate-300">
-              <p className="mb-6 leading-relaxed text-sm text-slate-300">
-                Artisan is an open-source project that helps people quickly locate nearby vulcanizers, tailors, and cobblers during emergencies. It was built to prove that some of the most meaningful software isn't measured by revenue, but by the people it helps.
-              </p>
-              
-              <div className="border-t border-slate-800/80 pt-6">
-                <h3 className="text-base font-semibold text-white mb-4">Contributors</h3>
-
-                {loadingContributors ? (
-                  <div className="flex justify-center py-6">
-                    <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
-                  </div>
-                ) : (
-                  <ul className="space-y-4">
-                    {contributors.length === 0 ? (
-                      <li className="text-slate-500 italic text-sm">No contributors listed yet.</li>
-                    ) : (
-                      contributors.map(c => (
-                        <li key={c.id} className="flex items-center gap-4 p-2 rounded-xl hover:bg-slate-800/50 transition-colors">
-                          <img src={c.image_url} alt={c.name} className="w-11 h-11 rounded-full object-cover bg-slate-800 border border-slate-700/80 shadow-sm" />
-                          <div>
-                            <p className="text-white font-semibold text-sm">{c.name}</p>
-                            <p className="text-xs text-slate-400">{c.role}</p>
-                          </div>
-                        </li>
-                      ))
-                    )}
-                  </ul>
-                )}
-              </div>
+            <div className="flex items-center gap-3 pt-1">
+              <span>© 2026 TheseNPCs</span>
             </div>
-          </DrawerPanel>
-        </DrawerPopup>
-      </Drawer>
+          </div>
+        }
+      />
+
+      <BottomSheet isOpen={showAbout} onClose={() => setShowAbout(false)}>
+        <div className="max-w-md mx-auto px-4 pb-8 text-slate-300 pt-4">
+          <p className="text-xs text-slate-400 italic mb-8 leading-relaxed border-l-2 border-blue-900/50 pl-3">
+            "For we are God's handiwork, created in Christ Jesus to do good works, God prepared in advance for us to do." - Ephesians 2:10.
+          </p>
+          <h2 className="text-2xl font-bold text-white mb-4">About the Project</h2>
+          <p className="mb-8 leading-relaxed">
+            Artisan is an open-source project that helps people quickly locate nearby vulcanizers, tailors, and cobblers. Some of the most meaningful software isn't measured by revenue, but by the people it helps.
+          </p>
+          <h3 className="text-lg font-semibold text-white mb-4">Contributors</h3>
+
+          {loadingContributors ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+            </div>
+          ) : (
+            <ul className="space-y-6">
+              {contributors.length === 0 ? (
+                <li className="text-slate-500 italic text-sm">No contributors listed yet.</li>
+              ) : (
+                contributors.map(c => (
+                  <li key={c.id} className="flex items-center gap-4">
+                    <img src={c.image_url} alt={c.name} className="w-12 h-12 rounded-full object-cover bg-slate-800 border border-slate-700" />
+                    <div>
+                      <p className="text-white font-medium">{c.name}</p>
+                      <p className="text-sm text-slate-500">{c.role}</p>
+                    </div>
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+        </div>
+      </BottomSheet>
       <Analytics />
     </div>
   );
