@@ -5,6 +5,14 @@ import { toast } from 'sonner';
 import AnimatedBackground from './components/AnimatedBackground';
 import ArtisanFilters from './components/ArtisanFilters';
 import BottomSheet from './components/BottomSheet';
+import {
+  Drawer,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerPanel,
+  DrawerPopup
+} from './components/ui/drawer';
 import artisianPng from './assets/Artisian.png';
 
 // Code-split the heavy map and list components so they don't block the landing page load
@@ -355,46 +363,48 @@ function App() {
             TheseNPCs
           </button>
         </p>
-        <span>•</span>
-        <a href="/add" className="text-slate-400 hover:text-white transition-colors underline underline-offset-4">
-          Admin Portal
-        </a>
       </div>
 
-      <BottomSheet isOpen={showAbout} onClose={() => setShowAbout(false)}>
-        <div className="max-w-md mx-auto px-4 pb-8 text-slate-300 pt-4">
-          <p className="text-xs text-slate-400 italic mb-8 leading-relaxed border-l-2 border-blue-900/50 pl-3">
-            "For we are God's handiwork, created in Christ Jesus to do good works, God prepared in advance for us to do." - Ephesians 2:10.
-          </p>
-          <h2 className="text-2xl font-bold text-white mb-4">About the Project</h2>
-          <p className="mb-8 leading-relaxed">
-            Artisan is an open-source project that helps people quickly locate nearby vulcanizers, tailors, and cobblers during emergencies. It was built to prove that some of the most meaningful software isn't measured by revenue, but by the people it helps.
-          </p>
-          <h3 className="text-lg font-semibold text-white mb-4">Contributors</h3>
+      <Drawer position="right" open={showAbout} onOpenChange={setShowAbout}>
+        <DrawerPopup variant="inset" showCloseButton={true}>
+          <DrawerHeader>
+            <DrawerTitle>About the Project</DrawerTitle>
+            <DrawerDescription className="italic border-l-2 border-blue-500/50 pl-3 mt-2 text-slate-400 text-xs">
+              "For we are God's handiwork, created in Christ Jesus to do good works, God prepared in advance for us to do." - Ephesians 2:10
+            </DrawerDescription>
+          </DrawerHeader>
+          <DrawerPanel>
+            <div className="text-slate-300">
+              <p className="mb-8 leading-relaxed text-sm">
+                Artisan is an open-source project that helps people quickly locate nearby vulcanizers, tailors, and cobblers during emergencies. It was built to prove that some of the most meaningful software isn't measured by revenue, but by the people it helps.
+              </p>
+              <h3 className="text-base font-semibold text-white mb-4">Contributors</h3>
 
-          {loadingContributors ? (
-            <div className="flex justify-center py-4">
-              <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
-            </div>
-          ) : (
-            <ul className="space-y-6">
-              {contributors.length === 0 ? (
-                <li className="text-slate-500 italic text-sm">No contributors listed yet.</li>
+              {loadingContributors ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                </div>
               ) : (
-                contributors.map(c => (
-                  <li key={c.id} className="flex items-center gap-4">
-                    <img src={c.image_url} alt={c.name} className="w-12 h-12 rounded-full object-cover bg-slate-800 border border-slate-700" />
-                    <div>
-                      <p className="text-white font-medium">{c.name}</p>
-                      <p className="text-sm text-slate-500">{c.role}</p>
-                    </div>
-                  </li>
-                ))
+                <ul className="space-y-4">
+                  {contributors.length === 0 ? (
+                    <li className="text-slate-500 italic text-sm">No contributors listed yet.</li>
+                  ) : (
+                    contributors.map(c => (
+                      <li key={c.id} className="flex items-center gap-4">
+                        <img src={c.image_url} alt={c.name} className="w-10 h-10 rounded-full object-cover bg-slate-800 border border-slate-700" />
+                        <div>
+                          <p className="text-white font-medium text-sm">{c.name}</p>
+                          <p className="text-xs text-slate-500">{c.role}</p>
+                        </div>
+                      </li>
+                    ))
+                  )}
+                </ul>
               )}
-            </ul>
-          )}
-        </div>
-      </BottomSheet>
+            </div>
+          </DrawerPanel>
+        </DrawerPopup>
+      </Drawer>
       <Analytics />
     </div>
   );

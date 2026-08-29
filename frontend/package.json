@@ -10,7 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@base-ui/react": "^1.7.0",
     "@vercel/analytics": "^2.0.1",
+    "class-variance-authority": "^0.7.1",
     "framer-motion": "^12.42.2",
     "lucide-react": "^1.21.0",
     "mapbox-gl": "^3.25.0",
