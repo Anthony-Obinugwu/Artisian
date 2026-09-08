@@ -28,21 +28,17 @@ export default function ArtisanMap({ userLocation, artisans, activeRoute, routin
   const legendRef = useRef<HTMLDivElement>(null);
 
   // --- Edge Zoom State ---
-  const [zoomLevel, setZoomLevel] = useState<number | null>(null);
   const [isZooming, setIsZooming] = useState(false);
-  const [activeZoomSide, setActiveZoomSide] = useState<'left'|'right'|null>(null);
   const initialTouchY = useRef<number | null>(null);
   const initialZoom = useRef<number | null>(null);
 
-  const handleZoomTouchStart = (e: React.TouchEvent, side: 'left'|'right') => {
+  const handleZoomTouchStart = (e: React.TouchEvent, _side: 'left'|'right') => {
     e.stopPropagation();
     if (!mapRef.current) return;
     const map = mapRef.current.getMap();
     initialTouchY.current = e.touches[0].clientY;
     initialZoom.current = map.getZoom();
     setIsZooming(true);
-    setActiveZoomSide(side);
-    setZoomLevel(initialZoom.current);
   };
   
   const handleZoomTouchMove = (e: React.TouchEvent) => {
@@ -57,7 +53,6 @@ export default function ArtisanMap({ userLocation, artisans, activeRoute, routin
     // Mapbox standard zoom range is 0 to 22
     const newZoom = Math.max(1, Math.min(22, initialZoom.current + zoomDelta));
     mapRef.current.getMap().setZoom(newZoom);
-    setZoomLevel(newZoom);
   };
   
   const handleZoomTouchEnd = (e: React.TouchEvent) => {
@@ -334,39 +329,25 @@ export default function ArtisanMap({ userLocation, artisans, activeRoute, routin
       )}
     </div>
 
-    {/* --- Edge Zoom Sliders (Snapchat Style) --- */}
+    {/* --- Edge Zoom Zones (Invisible touch gesture areas) --- */}
     
-    {/* Left Edge Zoom Zone */}
+    {/* Left Edge Touch Zone */}
     <div 
-      className="absolute left-0 top-0 bottom-0 w-8 z-30 touch-none flex items-center justify-start pl-1 pointer-events-auto"
+      className="absolute left-0 top-0 bottom-0 w-8 z-30 touch-none pointer-events-auto"
       onTouchStart={(e) => handleZoomTouchStart(e, 'left')}
       onTouchMove={handleZoomTouchMove}
       onTouchEnd={handleZoomTouchEnd}
       onTouchCancel={handleZoomTouchEnd}
-    >
-      <div className={`relative w-1.5 h-48 bg-slate-900/40 backdrop-blur-sm rounded-full border border-slate-700/50 transition-opacity duration-300 ${isZooming && activeZoomSide === 'left' ? 'opacity-100' : 'opacity-0'}`}>
-        <div 
-          className="absolute left-0 right-0 w-1.5 h-8 bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,0.9)] transition-all duration-75" 
-          style={{ bottom: `${((zoomLevel || 10) / 22) * 100}%`, transform: 'translateY(50%)' }}
-        />
-      </div>
-    </div>
+    />
 
-    {/* Right Edge Zoom Zone */}
+    {/* Right Edge Touch Zone */}
     <div 
-      className="absolute right-0 top-0 bottom-0 w-8 z-30 touch-none flex items-center justify-end pr-1 pointer-events-auto"
+      className="absolute right-0 top-0 bottom-0 w-8 z-30 touch-none pointer-events-auto"
       onTouchStart={(e) => handleZoomTouchStart(e, 'right')}
       onTouchMove={handleZoomTouchMove}
       onTouchEnd={handleZoomTouchEnd}
       onTouchCancel={handleZoomTouchEnd}
-    >
-      <div className={`relative w-1.5 h-48 bg-slate-900/40 backdrop-blur-sm rounded-full border border-slate-700/50 transition-opacity duration-300 ${isZooming && activeZoomSide === 'right' ? 'opacity-100' : 'opacity-0'}`}>
-        <div 
-          className="absolute left-0 right-0 w-1.5 h-8 bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,0.9)] transition-all duration-75" 
-          style={{ bottom: `${((zoomLevel || 10) / 22) * 100}%`, transform: 'translateY(50%)' }}
-        />
-      </div>
-    </div>
+    />
 
     </div>
   );
