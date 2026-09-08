@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Loader2, Trash2, Edit, X, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import AdminMapPicker from './AdminMapPicker';
 
 export default function ManageArtisansTab({ adminPin }: { adminPin: string }) {
   const [artisans, setArtisans] = useState<any[]>([]);
@@ -257,9 +258,19 @@ export default function ManageArtisansTab({ adminPin }: { adminPin: string }) {
                       className="w-full bg-[#1E293B] border border-slate-700/50 rounded-xl px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500/50 outline-none"
                     />
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(editingArtisan.mobility_type === 'MOBILE' || editingArtisan.mobility_type === 'mobile') && (
+                    <div className="col-span-1 md:col-span-2 pt-2">
+                      <AdminMapPicker
+                        hotspots={editingArtisan.hotspots || []}
+                        onHotspotsChange={(hotspots) => setEditingArtisan({ ...editingArtisan, hotspots })}
+                        primaryLocation={{
+                          lat: parseFloat(editingArtisan.latitude) || 6.5244,
+                          lng: parseFloat(editingArtisan.longitude) || 3.3792,
+                        }}
+                      />
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-slate-400 mb-1">Start Time (Optional)</label>
                     <input 

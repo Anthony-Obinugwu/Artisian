@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Loader2, MapPin, Plus, Trash2, X, MoreHorizontal } from 'lucide-react';
+import { Loader2, MapPin, Plus, X, MoreHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import Alert from '../Alert';
 import CustomSelect from '../CustomSelect';
 import { CATEGORY_ICONS } from '../CategoryIcons';
+import AdminMapPicker from './AdminMapPicker';
 
 const DEFAULT_SERVICES: Record<string, string[]> = {
   vulcanizer: ['Tire Pump', 'Tire Patching', 'Wheel Balancing', 'Tube Replacement', 'Tire Sales'],
@@ -93,20 +94,6 @@ export default function AddArtisanTab({ adminPin }: { adminPin: string }) {
     const newServices = { ...services };
     delete newServices[service];
     setServices(newServices);
-  };
-
-  const addHotspot = () => {
-    setHotspots([...hotspots, { location_name: '', lat: '', lng: '', start_time: '08:00', end_time: '18:00' }]);
-  };
-
-  const updateHotspot = (index: number, field: string, value: string) => {
-    const newHotspots = [...hotspots];
-    newHotspots[index][field] = value;
-    setHotspots(newHotspots);
-  };
-
-  const removeHotspot = (index: number) => {
-    setHotspots(hotspots.filter((_, i) => i !== index));
   };
 
   const getLocation = () => {
@@ -356,95 +343,15 @@ export default function AddArtisanTab({ adminPin }: { adminPin: string }) {
         </div>
 
         {formData.mobility_type === 'MOBILE' && (
-          <div className="space-y-4 border-b border-slate-800 pb-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-white">Mobile Hotspots</h2>
-              <button
-                type="button"
-                onClick={addHotspot}
-                className="text-sm bg-blue-900/50 hover:bg-blue-800 text-blue-300 px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
-              >
-                <Plus className="w-4 h-4" /> Add Hotspot
-              </button>
-            </div>
-            
-            {hotspots.map((hotspot, idx) => (
-              <div key={idx} className="bg-slate-800/50 p-4 rounded-xl border border-slate-700 space-y-3 relative">
-                <button
-                  type="button"
-                  onClick={() => removeHotspot(idx)}
-                  className="absolute top-3 right-3 text-red-400 hover:text-red-300 p-1"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-                
-                <div>
-                  <label className="block text-sm font-medium text-slate-400 mb-1">Location Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={hotspot.location_name}
-                    onChange={(e) => updateHotspot(idx, 'location_name', e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none"
-                    placeholder="e.g. Estate Gate 1"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-1">Latitude</label>
-                    <input
-                      type="number"
-                      step="any"
-                      required
-                      value={hotspot.lat}
-                      onChange={(e) => updateHotspot(idx, 'lat', e.target.value)}
-                      className="w-full bg-[#0F172A]/80 backdrop-blur-md border border-slate-700/50 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all shadow-inner"
-                      placeholder="e.g. 6.52"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-1">Longitude</label>
-                    <input
-                      type="number"
-                      step="any"
-                      required
-                      value={hotspot.lng}
-                      onChange={(e) => updateHotspot(idx, 'lng', e.target.value)}
-                      className="w-full bg-[#0F172A]/80 backdrop-blur-md border border-slate-700/50 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all shadow-inner"
-                      placeholder="e.g. 3.37"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-1">Start Time</label>
-                    <input
-                      type="time"
-                      required
-                      value={hotspot.start_time}
-                      onChange={(e) => updateHotspot(idx, 'start_time', e.target.value)}
-                      className="w-full bg-[#0F172A]/80 backdrop-blur-md border border-slate-700/50 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all shadow-inner"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-1">End Time</label>
-                    <input
-                      type="time"
-                      required
-                      value={hotspot.end_time}
-                      onChange={(e) => updateHotspot(idx, 'end_time', e.target.value)}
-                      className="w-full bg-[#0F172A]/80 backdrop-blur-md border border-slate-700/50 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all shadow-inner"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-            
-            {hotspots.length === 0 && (
-              <p className="text-sm text-slate-500 italic text-center py-2">No hotspots added. Artisan will be searchable by their primary location.</p>
-            )}
+          <div className="border-b border-slate-800 pb-6">
+            <AdminMapPicker
+              hotspots={hotspots}
+              onHotspotsChange={setHotspots}
+              primaryLocation={{
+                lat: parseFloat(formData.latitude) || 6.5244,
+                lng: parseFloat(formData.longitude) || 3.3792,
+              }}
+            />
           </div>
         )}
 
