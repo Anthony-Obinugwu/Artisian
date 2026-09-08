@@ -1,11 +1,35 @@
 -- 1. Convert 'location' from a GENERATED column to a standard geography column
-ALTER TABLE artisans ADD COLUMN new_location GEOGRAPHY(POINT, 4326);
-UPDATE artisans SET new_location = location;
-DROP INDEX IF EXISTS vulcanizers_location_idx;
-DROP INDEX IF EXISTS idx_artisans_location;
-ALTER TABLE artisans DROP COLUMN location;
-ALTER TABLE artisans RENAME COLUMN new_location TO location;
-CREATE INDEX IF NOT EXISTS idx_artisans_location ON public.artisans USING GIST (location);
+DO $$ 
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'artisans' AND column_name = 'location' AND is_generated = 'NEVER'
+  ) THEN
+    -- Column location is already a standard column, no-op
+    NULL;
+  ELSE
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns 
+      WHERE table_name = 'artisans' AND column_name = 'new_location'
+    ) THEN
+      ALTER TABLE artisans ADD COLUMN new_location GEOGRAPHY(POINT, 4326);
+    END IF;
+
+    UPDATE artisans SET new_location = location;
+    DROP INDEX IF EXISTS vulcanizers_location_idx;
+    DROP INDEX IF EXISTS idx_artisans_location;
+    
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns 
+      WHERE table_name = 'artisans' AND column_name = 'location'
+    ) THEN
+      ALTER TABLE artisans DROP COLUMN location;
+    END IF;
+
+    ALTER TABLE artisans RENAME COLUMN new_location TO location;
+    CREATE INDEX IF NOT EXISTS idx_artisans_location ON public.artisans USING GIST (location);
+  END IF;
+END $$;
 
 -- 2. Drop redundant time and coordinate columns
 ALTER TABLE artisans
@@ -35,20 +59,24 @@ FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
 -- 4. Fix foreign keys in child tables
--- Drop existing constraints
-ALTER TABLE artisan_hotspots DROP CONSTRAINT IF EXISTS artisan_hotspots_artisan_id_fkey;
-ALTER TABLE artisan_routes DROP CONSTRAINT IF EXISTS artisan_routes_artisan_id_fkey;
+DO $$
+BEGIN
+  -- artisan_hotspots
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'artisan_hotspots') THEN
+    ALTER TABLE artisan_hotspots DROP CONSTRAINT IF EXISTS artisan_hotspots_artisan_id_fkey;
+    ALTER TABLE artisan_hotspots ALTER COLUMN artisan_id SET NOT NULL;
+    ALTER TABLE artisan_hotspots ADD CONSTRAINT artisan_hotspots_artisan_id_fkey 
+      FOREIGN KEY (artisan_id) REFERENCES artisans(id) ON DELETE CASCADE;
+  END IF;
 
--- Add new cascading constraints and set NOT NULL
-ALTER TABLE artisan_hotspots 
-  ALTER COLUMN artisan_id SET NOT NULL,
-  ADD CONSTRAINT artisan_hotspots_artisan_id_fkey 
-    FOREIGN KEY (artisan_id) REFERENCES artisans(id) ON DELETE CASCADE;
-
-ALTER TABLE artisan_routes 
-  ALTER COLUMN artisan_id SET NOT NULL,
-  ADD CONSTRAINT artisan_routes_artisan_id_fkey 
-    FOREIGN KEY (artisan_id) REFERENCES artisans(id) ON DELETE CASCADE;
+  -- artisan_routes
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'artisan_routes') THEN
+    ALTER TABLE artisan_routes DROP CONSTRAINT IF EXISTS artisan_routes_artisan_id_fkey;
+    ALTER TABLE artisan_routes ALTER COLUMN artisan_id SET NOT NULL;
+    ALTER TABLE artisan_routes ADD CONSTRAINT artisan_routes_artisan_id_fkey 
+      FOREIGN KEY (artisan_id) REFERENCES artisans(id) ON DELETE CASCADE;
+  END IF;
+END $$;
 
 -- 5. Services Normalization
 -- Ensure the services table exists and has a unique constraint on name
@@ -74,37 +102,35 @@ CREATE TABLE IF NOT EXISTS artisan_services (
   PRIMARY KEY (artisan_id, service_id)
 );
 
--- Migrate existing services from the text array in artisans
+-- Migrate existing services from the text array in artisans IF the column still exists
 DO $$
 DECLARE
   rec RECORD;
   service_name TEXT;
   s_id UUID;
 BEGIN
-  FOR rec IN SELECT id, services FROM artisans WHERE services IS NOT NULL LOOP
-    IF rec.services IS NOT NULL THEN
-      -- Assuming services is a text array or jsonb array of strings. 
-      -- In the previous schema it was `_text` (text[]) but could be parsed differently.
-      -- Let's handle it as a jsonb array since the RPC casted it to jsonb.
-      -- If it's a text array, jsonb_array_elements_text(to_jsonb(rec.services)) works.
-      FOR service_name IN SELECT jsonb_array_elements_text(to_jsonb(rec.services)) LOOP
-        -- Insert into services if not exists
-        INSERT INTO services (name) VALUES (service_name)
-        ON CONFLICT (name) DO NOTHING;
-        
-        -- Get the service id
-        SELECT id INTO s_id FROM services WHERE name = service_name;
-        
-        -- Link it
-        INSERT INTO artisan_services (artisan_id, service_id) VALUES (rec.id, s_id)
-        ON CONFLICT DO NOTHING;
-      END LOOP;
-    END IF;
-  END LOOP;
-END $$;
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'artisans' AND column_name = 'services'
+  ) THEN
+    FOR rec IN SELECT id, services FROM artisans WHERE services IS NOT NULL LOOP
+      IF rec.services IS NOT NULL THEN
+        FOR service_name IN SELECT jsonb_array_elements_text(to_jsonb(rec.services)) LOOP
+          INSERT INTO services (name) VALUES (service_name)
+          ON CONFLICT (name) DO NOTHING;
+          
+          SELECT id INTO s_id FROM services WHERE name = service_name;
+          
+          INSERT INTO artisan_services (artisan_id, service_id) VALUES (rec.id, s_id)
+          ON CONFLICT DO NOTHING;
+        END LOOP;
+      END IF;
+    END LOOP;
 
--- Drop the services array column from artisans
-ALTER TABLE artisans DROP COLUMN IF EXISTS services;
+    -- Drop the services array column from artisans once data is migrated
+    ALTER TABLE artisans DROP COLUMN IF EXISTS services;
+  END IF;
+END $$;
 
 -- 6. Update find_nearby_artisans RPC
 DROP FUNCTION IF EXISTS find_nearby_artisans(float, float, float, text, text);
