@@ -130,8 +130,18 @@ app.get('/api/artisans/nearby', async (req, res) => {
   }
 });
 
+import { artisanCreateSchema, artisanUpdateSchema } from './validators/artisan';
+
 app.post('/api/artisans', adminRateLimiter, authenticateAdmin, async (req, res) => {
   try {
+    const validation = artisanCreateSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        error: 'Invalid request payload',
+        details: validation.error.flatten().fieldErrors,
+      });
+    }
+
     const { business_name, owner_name, phone, latitude, longitude, address, services, category, mobility_type, sound_signal, hotspots, rating, start_time, end_time } = req.body;
 
     const parsedLat = parseFloat(latitude);
@@ -229,6 +239,14 @@ app.get('/api/artisans/all', authenticateAdmin, async (req, res) => {
 app.put('/api/artisans/:id', authenticateAdmin, async (req, res) => {
   try {
     const { id } = req.params;
+    const validation = artisanUpdateSchema.safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({
+        error: 'Invalid request payload',
+        details: validation.error.flatten().fieldErrors,
+      });
+    }
+
     const { business_name, owner_name, phone, address, services, category, mobility_type, sound_signal, rating, is_open, start_time, end_time } = req.body;
     
     const { data, error } = await supabase.from('artisans')

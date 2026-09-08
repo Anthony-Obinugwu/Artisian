@@ -2,7 +2,7 @@
 
 > *"For we are God's handiwork, created in Christ Jesus to do good works, God prepared in advance for us to do." - Ephesians 2:10*
 
-**Artisan** is an open-source, beautifully designed full-stack web application built to help drivers and individuals quickly locate nearby roadside vulcanizers, tailors, cobblers, nail cutters, barbers, and mobile vendors during emergencies. 
+**Artisan** is an open-source, beautifully designed full-stack web application built to help drivers and individuals quickly locate nearby roadside vulcanizers, tailors, cobblers, nail cutters, barbers, and mobile vendors. 
 
 It was built to prove a simple point: **Some of the most meaningful software isn't measured by revenue, but by the people it helps.**
 

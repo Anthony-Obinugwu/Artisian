@@ -65,8 +65,8 @@ export default function ArtisanFilters({
             </button>
           ))}
         </div>
-        <div className="flex justify-center gap-2 mb-2">
-          <div className="bg-slate-800 p-1 rounded-full flex w-full">
+        <div className="flex justify-between items-center gap-2 mb-2">
+          <div className="bg-slate-800 p-1 rounded-full flex flex-1">
             {MOBILITY_OPTIONS.map(mob => (
               <button
                 key={mob.id}
@@ -77,6 +77,12 @@ export default function ArtisanFilters({
               </button>
             ))}
           </div>
+          <a
+            href="/add"
+            className="bg-blue-600/20 text-blue-400 border border-blue-500/30 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
+          >
+            ⚙️ Admin
+          </a>
         </div>
       </div>
     );
@@ -111,8 +117,8 @@ export default function ArtisanFilters({
         ))}
       </div>
 
-      <div className="flex justify-center gap-2">
-        <div className="bg-[#0F172A]/80 backdrop-blur-xl p-1.5 rounded-full border border-slate-700/50 shadow-xl flex">
+      <div className="flex justify-between items-center gap-2">
+        <div className="bg-[#0F172A]/80 backdrop-blur-xl p-1.5 rounded-full border border-slate-700/50 shadow-xl flex mx-auto">
           {MOBILITY_OPTIONS.map(mob => (
             <button
               key={mob.id}
@@ -123,6 +129,13 @@ export default function ArtisanFilters({
             </button>
           ))}
         </div>
+        <a
+          href="/add"
+          className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/40 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-md transition-all hover:scale-105 flex items-center gap-1.5"
+          title="Admin Dashboard"
+        >
+          <span>⚙️</span> Admin
+        </a>
       </div>
     </div>
   );
