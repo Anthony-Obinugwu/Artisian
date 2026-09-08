@@ -318,3 +318,6 @@ BEGIN
   ORDER BY a.created_at DESC;
 END;
 $$ LANGUAGE plpgsql;
+
+-- 8. Notify PostgREST to reload schema cache immediately
+NOTIFY pgrst, 'reload schema';
